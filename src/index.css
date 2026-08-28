@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+
+  --color-cream: #fff9f4;
+  --color-peach: #ffd4b8;
+  --color-peach-light: #fff0e6;
+  --color-orange: #ff8c42;
+  --color-orange-soft: #ffb380;
+  --color-warm: #2d2520;
+  --color-warm-muted: #6b5d54;
+  --color-gold: #c4a574;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply m-0 bg-cream font-sans text-warm antialiased;
+  }
+
+  ::selection {
+    @apply bg-peach text-warm;
+  }
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-slow-zoom {
+    animation: slow-zoom 9s ease-out forwards;
+  }
+
+  .animate-rise {
+    animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes slow-zoom {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
