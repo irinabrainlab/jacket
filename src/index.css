@@ -23,6 +23,11 @@
     @apply m-0 bg-cream font-sans text-warm antialiased;
   }
 
+  :focus-visible {
+    outline: 3px solid var(--color-orange);
+    outline-offset: 3px;
+  }
+
   ::selection {
     @apply bg-peach text-warm;
   }
@@ -52,6 +57,111 @@
   .animate-rise {
     animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+
+  .soft-on-orange {
+    color: rgb(255 255 255 / 0.88);
+  }
+
+  .skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 80;
+    transform: translateY(-150%);
+    border-radius: 9999px;
+    background: var(--color-warm);
+    padding: 0.75rem 1.25rem;
+    color: var(--color-cream);
+  }
+
+  .skip-link:focus {
+    transform: none;
+  }
+
+  .pin-pulse {
+    animation: ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  .watch-second,
+  .watch-minute,
+  .watch-hour {
+    transform-box: view-box;
+    transform-origin: 110px 140px;
+  }
+
+  .watch-second {
+    animation: watch-spin 60s linear infinite;
+  }
+
+  .watch-minute {
+    animation: watch-spin 3600s linear infinite;
+  }
+
+  .watch-hour {
+    animation: watch-spin 43200s linear infinite;
+  }
+}
+
+html.a11y-large {
+  font-size: 118%;
+}
+
+html.a11y-large body {
+  line-height: 1.65;
+}
+
+html.a11y-senior main a,
+html.a11y-senior footer a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+html.a11y-large button,
+html.a11y-large a {
+  min-height: 2.75rem;
+}
+
+html.a11y-contrast {
+  --color-cream: #ffffff;
+  --color-peach: #e4c3a6;
+  --color-peach-light: #fff6ef;
+  --color-orange: #9a3412;
+  --color-orange-soft: #c2410c;
+  --color-warm: #1c1410;
+  --color-warm-muted: #3d322c;
+  --color-gold: #8a6230;
+}
+
+html.a11y-contrast .soft-on-orange,
+html.a11y-contrast .text-cream\/75,
+html.a11y-contrast .text-cream\/80,
+html.a11y-contrast .text-cream\/85 {
+  color: #fff;
+}
+
+html.a11y-calm,
+html.a11y-calm body {
+  scroll-behavior: auto;
+}
+
+html.a11y-calm .watch-second,
+html.a11y-calm .watch-minute,
+html.a11y-calm .watch-hour,
+html.a11y-calm .pin-pulse {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .watch-second,
+  .watch-minute,
+  .watch-hour,
+  .pin-pulse {
+    animation: none;
+  }
 }
 
 @keyframes slow-zoom {
@@ -71,5 +181,19 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes ping {
+  75%,
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes watch-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-
-const links = [
-  { href: '#usluge', label: 'Usluge' },
-  { href: '#cenovnik', label: 'Cenovnik' },
-  { href: '#kontakt', label: 'Kontakt' },
-]
+import A11yMenu from './A11yMenu'
+import { useI18n } from '../i18n'
 
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const { lang, setLang, t } = useI18n()
+  const links = [
+    { href: '#usluge', label: t('Usluge', 'Services') },
+    { href: '#cenovnik', label: t('Cenovnik', 'Price list') },
+    { href: '#kontakt', label: t('Kontakt', 'Contact') },
+  ]
 
   return (
     <motion.header
@@ -33,21 +35,35 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <A11yMenu />
+          <div className="flex rounded-full bg-peach-light p-0.5 text-xs font-medium" role="group" aria-label={t('Jezik', 'Language')}>
+            {['sr', 'en'].map((code) => (
+              <button
+                key={code}
+                type="button"
+                aria-pressed={lang === code}
+                onClick={() => setLang(code)}
+                className={`rounded-full px-2.5 py-1 uppercase ${lang === code ? 'bg-white text-warm shadow-sm' : 'text-warm-muted'}`}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
           <a
             href="#kontakt"
             className="rounded-full bg-orange px-4 py-2 text-xs font-medium tracking-wide text-white transition hover:bg-orange/90 sm:px-5"
             onClick={() => setOpen(false)}
           >
-            Posetite nas
+            {t('Kontakt', 'Contact')}
           </a>
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-full text-warm md:hidden"
             aria-expanded={open}
-            aria-label={open ? 'Zatvori meni' : 'Otvori meni'}
+            aria-label={open ? t('Zatvori meni', 'Close menu') : t('Otvori meni', 'Open menu')}
             onClick={() => setOpen((v) => !v)}
           >
-            <span className="sr-only">{open ? 'Zatvori' : 'Meni'}</span>
+            <span className="sr-only">{open ? t('Zatvori', 'Close') : t('Meni', 'Menu')}</span>
             <span className="flex w-4 flex-col gap-1">
               <span
                 className={`h-px w-full bg-warm transition ${open ? 'translate-y-[2.5px] rotate-45' : ''}`}

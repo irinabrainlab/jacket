@@ -5,12 +5,14 @@ import Ledger from './components/Ledger'
 import About from './components/About'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
+import SkipLink from './components/SkipLink'
 
 export default function App() {
   return (
     <>
+      <SkipLink />
       <Header />
-      <main>
+      <main id="sadrzaj">
         <Hero />
         <Services />
         <Ledger />

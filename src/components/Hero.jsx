@@ -9,12 +9,17 @@ import {
 import { Sparkles } from 'lucide-react'
 import heroInterior from '../assets/hero-interior.jpg'
 import heroWardrobe from '../assets/hero-wardrobe.jpg'
+import { useRef } from 'react'
+import { useA11y } from '../a11y'
+import { useI18n } from '../i18n'
 
 const services = [
-  { title: 'Odela i sakoi' },
-  { title: 'Košulje' },
-  { title: 'Jakne' },
-  { title: 'Mantili' },
+  { sr: 'Odela', en: 'Suits' },
+  { sr: 'Košulje', en: 'Shirts' },
+  { sr: 'Jakne', en: 'Jackets' },
+  { sr: 'Kaputi', en: 'Coats' },
+  { sr: 'Haljine', en: 'Dresses' },
+  { sr: 'Koža i krzno', en: 'Leather and fur' },
 ]
 
 // Ormar se otvara i zatvara u petlji od CYCLE sekundi.
@@ -29,8 +34,8 @@ const LOGO_PHASE = [0, 0.18, 0.26, 0.9, 0.96, 1]
 
 function ServicePill({ clock, index, title }) {
   const offset = index % 2 === 0 ? -28 : 28
-  const enter = index * 0.03
-  const phase = [0, 0.4 + enter, 0.5 + enter, 0.66, 0.7, 1]
+  const enter = index * 0.015
+  const phase = [0, 0.38 + enter, 0.46 + enter, 0.68, 0.74, 1]
 
   const opacity = useTransform(clock, phase, [0, 0, 1, 1, 0, 0])
   const x = useTransform(clock, phase, [offset, offset, 0, 0, offset, offset])
@@ -38,7 +43,7 @@ function ServicePill({ clock, index, title }) {
 
   return (
     <motion.div
-      className="w-fit rounded-full bg-white/85 px-3 py-1.5 text-xs font-medium text-warm shadow-lg backdrop-blur-md sm:px-4 sm:py-2 sm:text-sm"
+      className="w-fit rounded-full bg-white/85 px-3 py-1 text-[0.7rem] font-medium text-warm shadow-lg backdrop-blur-md sm:text-xs"
       style={{
         opacity,
         x,
@@ -53,13 +58,21 @@ function ServicePill({ clock, index, title }) {
 
 export default function Hero() {
   const reduceMotion = useReducedMotion()
+  const { calm } = useA11y()
+  const reduce = reduceMotion || calm
+  const reduceRef = useRef(reduce)
+  reduceRef.current = reduce
+  const { t } = useI18n()
 
   // Uz uključeno "smanji kretanje" sat stoji na sredini ciklusa: ormar je
   // otvoren, natpisi vidljivi, logo skriven — sve bez pokreta.
-  const clock = useMotionValue(reduceMotion ? 0.55 : 0)
+  const clock = useMotionValue(reduce ? 0.55 : 0)
 
   useAnimationFrame((elapsed) => {
-    if (reduceMotion) return
+    if (reduceRef.current) {
+      clock.set(0.55)
+      return
+    }
     clock.set(((elapsed / 1000) % CYCLE) / CYCLE)
   })
 
@@ -92,17 +105,20 @@ export default function Hero() {
         <div className="absolute inset-0 bg-linear-to-r from-cream/85 via-cream/20 to-peach-light/30" />
       </motion.div>
 
-      {/* Floating ambient orbs */}
-      <motion.div
-        className="pointer-events-none absolute -right-20 top-32 h-72 w-72 rounded-full bg-orange/20 blur-3xl"
-        animate={{ x: [0, -30, 0], y: [0, 20, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="pointer-events-none absolute -left-16 bottom-40 h-56 w-56 rounded-full bg-peach/40 blur-3xl"
-        animate={{ x: [0, 25, 0], y: [0, -15, 0] }}
-        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-      />
+      {!reduce && (
+        <>
+          <motion.div
+            className="pointer-events-none absolute -right-20 top-32 h-72 w-72 rounded-full bg-orange/20 blur-3xl"
+            animate={{ x: [0, -30, 0], y: [0, 20, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="pointer-events-none absolute -left-16 bottom-40 h-56 w-56 rounded-full bg-peach/40 blur-3xl"
+            animate={{ x: [0, 25, 0], y: [0, -15, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </>
+      )}
 
       <div className="relative mx-auto flex min-h-dvh max-w-6xl flex-col justify-center px-6 pt-20 pb-8 sm:pt-24 sm:pb-16 lg:px-10 lg:pt-28 lg:pb-24">
         <div className="grid items-center gap-5 sm:gap-12 lg:grid-cols-2 lg:gap-16">
@@ -119,18 +135,21 @@ export default function Hero() {
               transition={{ delay: 0.6 }}
             >
               <Sparkles className="h-4 w-4" />
-              Vračar · Beograd
+              {t('Vračar · Beograd', 'Vračar · Belgrade')}
             </motion.p>
 
             <h1 className="font-serif text-4xl leading-[1.05] font-normal tracking-tight text-warm sm:text-5xl md:text-6xl lg:text-7xl">
-              <span className="block">Čisto.</span>
-              <span className="block italic text-orange">Od uvek.</span>
+              <span className="block">{t('Čisto.', 'Clean.')}</span>
+              <span className="block italic text-orange">{t('Od uvek.', 'Always.')}</span>
               <span className="block">JACKET.</span>
             </h1>
             <span className="mt-5 block h-px w-16 bg-gold" />
 
             <p className="mt-5 max-w-md leading-relaxed text-warm-muted text-balance sm:text-lg">
-              Hemijsko čišćenje u srcu Vračara. Isti klijenti, već decenijama.
+              {t(
+                'Hemijsko čišćenje u srcu Vračara. Isti klijenti, već decenijama.',
+                'Dry cleaning in the heart of Vračar. The same clients, for decades.',
+              )}
             </p>
 
             <motion.div
@@ -143,13 +162,13 @@ export default function Hero() {
                 href="#usluge"
                 className="rounded-full bg-orange px-6 py-3 text-sm font-medium tracking-wide text-white shadow-lg shadow-orange/25 transition hover:bg-orange/90 hover:shadow-orange/35 sm:px-8 sm:py-3.5"
               >
-                Naše usluge
+                {t('Naše usluge', 'Our services')}
               </a>
               <a
                 href="#kontakt"
                 className="rounded-full border border-warm/15 bg-white/60 px-6 py-3 text-sm font-medium tracking-wide text-warm backdrop-blur-sm transition hover:bg-white/90 sm:px-8 sm:py-3.5"
               >
-                Posetite nas
+                {t('Kontakt', 'Contact')}
               </a>
             </motion.div>
           </motion.div>
@@ -168,7 +187,7 @@ export default function Hero() {
             >
               <motion.img
                 src={heroWardrobe}
-                alt="Garderober sa odećom"
+                alt={t('Garderober sa odećom', 'Wardrobe with clothes')}
                 className="absolute inset-0 h-full w-full object-cover"
                 style={{ scale: interiorScale }}
               />
@@ -199,29 +218,25 @@ export default function Hero() {
                 </span>
                 <span className="h-px w-12 bg-orange/40 sm:w-16" />
                 <span className="text-[0.6rem] tracking-[0.25em] text-warm-muted/70 uppercase sm:text-[0.65rem] sm:tracking-[0.3em]">
-                  hemijsko čišćenje
+                  {t('hemijsko čišćenje', 'dry cleaning')}
                 </span>
               </motion.div>
 
               {/* Service pills floating out */}
-              <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-center gap-2 p-4 sm:gap-3 sm:p-6">
-                {services.slice(0, 4).map((s, i) => (
+              <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-center gap-1.5 p-3 sm:p-5">
+                {services.map((s, i) => (
                   <ServicePill
-                    key={s.title}
+                    key={s.sr}
                     clock={clock}
                     index={i}
-                    title={s.title}
+                    title={t(s.sr, s.en)}
                   />
                 ))}
               </div>
             </div>
 
             {/* Subtle float */}
-            <motion.div
-              className="absolute -inset-4 -z-10 rounded-[2rem] bg-linear-to-br from-peach/50 to-orange-soft/20 blur-2xl"
-              animate={{ opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            />
+            <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-linear-to-br from-peach/50 to-orange-soft/20 blur-2xl" />
           </motion.div>
         </div>
 
@@ -232,13 +247,9 @@ export default function Hero() {
           animate={{ opacity: 1 }}
           transition={{ delay: 3 }}
         >
-          <motion.div
-            className="flex h-10 w-6 items-start justify-center rounded-full border border-warm/20 p-1.5"
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
+          <div className="flex h-10 w-6 items-start justify-center rounded-full border border-warm/20 p-1.5">
             <div className="h-2 w-1 rounded-full bg-orange/60" />
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>

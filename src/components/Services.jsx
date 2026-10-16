@@ -1,112 +1,38 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import homeWardrobe from '../assets/home-wardrobe.jpg'
+import { useI18n } from '../i18n'
+import { formatDin, groups, labelOf, parseDin } from '../prices'
 
-const services = [
-  {
-    id: 'odela',
-    title: 'Odela i sakoi',
-    note: 'Precizno čišćenje koje čuva kroj i oblik',
-    x: 16,
-    y: 40,
-  },
-  {
-    id: 'kosulje',
-    title: 'Košulje',
-    note: 'Ispeglane, složene i spremne za nošenje',
-    x: 34,
-    y: 38,
-  },
-  {
-    id: 'jakne',
-    title: 'Jakne',
-    note: 'Pernate, bomber i sezonske jakne — bez tragova i bez izgubljene zapremine',
-    x: 50,
-    y: 36,
-  },
-  {
-    id: 'mantili',
-    title: 'Mantili',
-    note: 'Vuna, kašmir i trenčkot — sezonska nega koja čuva siluetu',
-    x: 54,
-    y: 48,
-  },
-  {
-    id: 'koza',
-    title: 'Koža i krzno',
-    note: 'Specijalizovana obrada uz negu i hranjenje kože',
-    x: 66,
-    y: 40,
-  },
-  {
-    id: 'haljine',
-    title: 'Haljine',
-    note: 'Večernje i svečane haljine, delikatne tkanine i šljokice',
-    x: 88,
-    y: 50,
-  },
-  {
-    id: 'vencanice',
-    title: 'Venčanice',
-    note: 'Delikatno čišćenje i zaštitna navlaka za čuvanje',
-    x: 80,
-    y: 36,
-  },
-  {
-    id: 'dzemperi',
-    title: 'Džemperi i vuna',
-    note: 'Kašmir, merino i pletenina — bez skupljanja i bez žuljeva',
-    x: 14,
-    y: 18,
-  },
-  {
-    id: 'farmerke',
-    title: 'Farmerke',
-    note: 'Čišćenje koje čuva boju, kroj i mekoću denima',
-    x: 66,
-    y: 16,
-  },
-  {
-    id: 'kravate',
-    title: 'Kravate i šalovi',
-    note: 'Svila i fini materijali, bez otiska i bez tragova',
-    x: 66,
-    y: 70,
-  },
-  {
-    id: 'peglanje',
-    title: 'Peglanje i slaganje',
-    note: 'Besprekorno ispeglano, složeno kao u izlogu',
-    x: 34,
-    y: 72,
-  },
-  {
-    id: 'posteljina',
-    title: 'Posteljina',
-    note: 'Čaršavi, jorgani i peškiri — sveže, meko i uredno složeno',
-    x: 84,
-    y: 78,
-  },
+const pins = [
+  { title: 'Košulje i majice', x: 18, y: 34 },
+  { title: 'Odela', x: 36, y: 40 },
+  { title: 'Džemperi i dodaci', x: 22, y: 58 },
+  { title: 'Trenerke', x: 40, y: 68 },
+  { title: 'Kaputi i mantili', x: 54, y: 30 },
+  { title: 'Jakne', x: 66, y: 42 },
+  { title: 'Suknje i haljine', x: 80, y: 36 },
+  { title: 'Koža i krzno', x: 72, y: 62 },
+  { title: 'Samo peglanje', x: 56, y: 74 },
+  { title: 'Radna odeća', x: 86, y: 70 },
+  { title: 'Posteljina', x: 16, y: 80 },
+  { title: 'Zavese, stolnjaci, peškiri', x: 34, y: 84 },
 ]
 
-function Pin({ service, active, onSelect }) {
+function Pin({ x, y, label, active, onSelect }) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(service.id)}
-      className="absolute z-10 hidden -translate-x-1/2 -translate-y-1/2 cursor-pointer sm:block"
-      style={{ left: `${service.x}%`, top: `${service.y}%` }}
+      onClick={onSelect}
+      className="absolute z-10 hidden h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-pointer sm:block"
+      style={{ left: `${x}%`, top: `${y}%` }}
       aria-pressed={active}
-      aria-label={service.title}
+      aria-label={label}
     >
-      <span className="relative flex h-7 w-7 items-center justify-center sm:h-8 sm:w-8">
-        {active && (
-          <span className="absolute inset-0 animate-ping rounded-full bg-orange/45" />
-        )}
+      <span className="relative flex h-full w-full items-center justify-center">
+        {active && <span className="pin-pulse absolute inset-1 rounded-full bg-orange/45" />}
         <span
-          className={`relative rounded-full shadow-lg ring-2 ring-white transition-all duration-300 ${
-            active
-              ? 'h-3.5 w-3.5 bg-orange sm:h-4 sm:w-4'
-              : 'h-2.5 w-2.5 bg-orange/90 sm:h-3 sm:w-3'
+          className={`relative rounded-full shadow-lg ring-2 ring-white ${
+            active ? 'h-4 w-4 bg-orange' : 'h-3 w-3 bg-orange/90'
           }`}
         />
       </span>
@@ -115,67 +41,256 @@ function Pin({ service, active, onSelect }) {
 }
 
 export default function Services() {
-  const [open, setOpen] = useState(null)
-  const current = services.find((s) => s.id === open)
+  const { lang, t } = useI18n()
+  const [open, setOpen] = useState(groups[0].title)
+  const [qty, setQty] = useState({})
+  const label = (sr) => labelOf(lang, sr)
+  const current = groups.find((group) => group.title === open) ?? groups[0]
+
+  function setCount(key, next) {
+    const value = Math.max(0, Math.min(30, next))
+    setQty((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const chosen = useMemo(() => {
+    const rows = []
+    for (const group of groups) {
+      for (const [item, price] of group.rows) {
+        const count = qty[`${group.title}|${item}`] || 0
+        if (count > 0) {
+          rows.push({
+            key: `${group.title}|${item}`,
+            item,
+            price,
+            count,
+            meters: item.includes('m²'),
+            sum: count * parseDin(price),
+          })
+        }
+      }
+    }
+    return rows
+  }, [qty])
+
+  const total = chosen.reduce((sum, row) => sum + row.sum, 0)
+  const pieces = chosen.filter((row) => !row.meters).reduce((sum, row) => sum + row.count, 0)
+  const meters = chosen.filter((row) => row.meters).reduce((sum, row) => sum + row.count, 0)
+  const [rate, setRate] = useState(null)
+  const [rateMissing, setRateMissing] = useState(false)
+
+  useEffect(() => {
+    let live = true
+    async function load() {
+      try {
+        const response = await fetch('https://kurs.resenje.org/api/v1/currencies/eur/rates/today')
+        if (!response.ok) throw new Error('rate')
+        const data = await response.json()
+        if (!live) return
+        if (!Number.isFinite(data.exchange_middle)) throw new Error('rate')
+        setRate({ ...data, readAt: new Date() })
+        setRateMissing(false)
+      } catch {
+        if (live) setRateMissing(true)
+      }
+    }
+    load()
+    const onShow = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onShow)
+    const timer = setInterval(load, 15 * 60 * 1000)
+    return () => {
+      live = false
+      document.removeEventListener('visibilitychange', onShow)
+      clearInterval(timer)
+    }
+  }, [])
+
+  const euros =
+    rate && total > 0
+      ? (total / rate.exchange_middle).toLocaleString('sr-RS', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : ''
+  const rateLabel = rate
+    ? Number(rate.exchange_middle).toLocaleString('sr-RS', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    : ''
 
   return (
     <section id="usluge" className="scroll-mt-24 px-6 py-20 sm:py-24 lg:px-10">
       <div className="mx-auto max-w-6xl">
         <p className="mb-3 text-sm font-medium tracking-[0.2em] text-orange uppercase">
-          Usluge
+          {t('Usluge', 'Services')}
         </p>
         <h2 className="max-w-2xl font-serif text-3xl leading-tight text-warm sm:text-4xl lg:text-5xl">
-          Šta <span className="italic text-orange">čistimo</span>
+          {t('Šta', 'What we')} <span className="italic text-orange">{t('čistimo', 'clean')}</span>
         </h2>
         <span className="mt-5 block h-px w-12 bg-gold" />
+        <p className="mt-6 max-w-2xl leading-relaxed text-warm-muted">
+          {t(
+            'Svaka stavka iz cenovnika koja ima cenu po komadu ili po kvadratu. Klik dodaje količinu, zbir je tačna računica.',
+            'Every price-list item that has a price per piece or per square metre. A click adds the quantity. The total is the exact sum.',
+          )}
+        </p>
 
         <div className="relative mt-10 overflow-hidden rounded-3xl bg-warm shadow-xl shadow-orange/10">
           <img
             src={homeWardrobe}
-            alt="Ormar u luksuznom stanu sa odelima, košuljama, jaknama, mantilima i ostalom garderobom"
+            alt={t(
+              'Ormar sa odelima, košuljama, jaknama, mantilima, haljinama, kožom i kućnim tekstilom',
+              'A wardrobe with suits, shirts, jackets, coats, dresses, leather and household linen',
+            )}
             className="aspect-3/2 w-full object-cover object-[center_60%]"
           />
-
-          {services.map((s) => (
+          {pins.map((pin) => (
             <Pin
-              key={s.id}
-              service={s}
-              active={open === s.id}
-              onSelect={(id) => setOpen((prev) => (prev === id ? null : id))}
+              key={pin.title}
+              x={pin.x}
+              y={pin.y}
+              label={label(pin.title)}
+              active={open === pin.title}
+              onSelect={() => setOpen(pin.title)}
             />
           ))}
-
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-warm/80 via-warm/20 to-transparent px-5 pt-16 pb-5 sm:px-8 sm:pb-7">
-            {current && (
-              <div key={current.id} className="max-w-md animate-rise">
-                <p className="font-serif text-2xl text-cream sm:text-3xl">
-                  {current.title}
-                </p>
-                <p className="mt-1 text-sm text-cream/75 sm:text-base">
-                  {current.note}
-                </p>
-              </div>
-            )}
+            <p className="font-serif text-2xl text-cream sm:text-3xl">{label(current.title)}</p>
+            <p className="mt-1 text-sm text-cream/80">
+              {t('Sve stavke ove grupe su ispod, sa cenom iz knjige.', 'Every item in this group is below, with the price from the book.')}
+            </p>
           </div>
         </div>
 
         <ul className="mt-5 flex flex-wrap gap-2">
-          {services.map((s) => (
-            <li key={s.id}>
+          {groups.map((group) => (
+            <li key={group.title}>
               <button
                 type="button"
-                onClick={() => setOpen((prev) => (prev === s.id ? null : s.id))}
-                className={`rounded-full px-3.5 py-1.5 text-sm transition ${
-                  open === s.id
-                    ? 'bg-orange text-white'
-                    : 'bg-white text-warm hover:bg-peach-light'
+                aria-pressed={open === group.title}
+                onClick={() => setOpen(group.title)}
+                className={`min-h-11 rounded-full px-4 py-2 text-sm transition ${
+                  open === group.title ? 'bg-orange text-white' : 'bg-white text-warm hover:bg-peach-light'
                 }`}
               >
-                {s.title}
+                {label(group.title)}
               </button>
             </li>
           ))}
         </ul>
+
+        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="rounded-3xl bg-white p-5 shadow-xl shadow-orange/10 ring-1 ring-peach/40 sm:p-8">
+          <h3 className="font-serif text-2xl text-warm">{label(current.title)}</h3>
+          <ul className="mt-4">
+            {current.rows.map(([item, price]) => {
+              const key = `${current.title}|${item}`
+              const count = qty[key] || 0
+              const metersRow = item.includes('m²')
+              return (
+                <li
+                  key={key}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-peach/40 py-3"
+                >
+                  <span className="min-w-0 flex-1 text-warm">{label(item)}</span>
+                  <span className="font-serif text-warm tabular-nums">
+                    {price}
+                    <span className="ml-1 font-sans text-xs text-warm-muted">
+                      {metersRow ? t('din / m²', 'din / m²') : t('din', 'din')}
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={t(`Manje: ${label(item)}`, `Less: ${label(item)}`)}
+                      disabled={count === 0}
+                      onClick={() => setCount(key, count - 1)}
+                      className="h-11 w-11 rounded-full bg-peach-light text-lg text-warm disabled:opacity-40"
+                    >
+                      −
+                    </button>
+                    <span className="w-8 text-center text-sm tabular-nums" aria-hidden="true">
+                      {count}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t(`Više: ${label(item)}`, `More: ${label(item)}`)}
+                      onClick={() => setCount(key, count + 1)}
+                      className="h-11 w-11 rounded-full bg-orange text-lg text-white"
+                    >
+                      +
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+
+        <aside className="rounded-3xl bg-white p-6 shadow-xl shadow-orange/10 ring-1 ring-peach/40 lg:sticky lg:top-28" aria-live="polite">
+          <p className="text-sm tracking-[0.16em] text-orange uppercase">{t('Zbir', 'Total')}</p>
+          <p className="mt-3 font-serif text-4xl text-orange tabular-nums">
+            {total > 0 ? formatDin(total) : '0'}
+            <span className="ml-2 font-sans text-base text-warm-muted">{t('din', 'din')}</span>
+          </p>
+          <p className="mt-1 font-serif text-2xl text-warm tabular-nums">
+            {rate ? `${euros || '0,00'} €` : '— €'}
+          </p>
+          {total > 0 && (
+            <p className="mt-2 text-sm text-warm-muted">
+              {pieces > 0 && t(`${pieces} kom.`, `${pieces} pcs`)}
+              {pieces > 0 && meters > 0 && ' · '}
+              {meters > 0 && `${meters} m²`}
+            </p>
+          )}
+          {chosen.length > 0 && (
+            <ul className="mt-4 border-t border-peach/50 pt-3 text-sm">
+              {chosen.map((row) => (
+                <li key={row.key} className="flex items-baseline gap-2 py-1.5">
+                  <span className="text-warm">
+                    {row.count}
+                    {row.meters ? ' m²' : ' ×'} {label(row.item)}
+                  </span>
+                  <span className="mb-1 min-w-3 flex-1 border-b border-dotted border-peach" />
+                  <span className="font-serif text-warm tabular-nums">{formatDin(row.sum)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {(rate || rateMissing || meters > 0) && (
+            <div className="mt-4 space-y-2 text-sm leading-relaxed text-warm-muted">
+              {rate ? (
+                <p>{t(`Po srednjem kursu NBS, ${rateLabel}. Naplata je u dinarima.`, `At the NBS middle rate, ${rateLabel}. Payment is in dinars.`)}</p>
+              ) : (
+                rateMissing && (
+                  <p>
+                    {t(
+                      'Kurs NBS nije stigao, pa evro nije ispisan.',
+                      'The NBS rate did not arrive, so the euro figure is not shown.',
+                    )}
+                  </p>
+                )
+              )}
+              {meters > 0 && (
+                <p>
+                  {t(
+                    'Za zavese i ćilim množilac je kvadrat koji ste uneli.',
+                    'For curtains and carpet, the multiplier is the square metres you entered.',
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+          {total > 0 && (
+            <button
+              type="button"
+              onClick={() => setQty({})}
+              className="mt-4 min-h-11 text-sm text-orange underline-offset-2 hover:underline"
+            >
+              {t('Obriši zbir', 'Clear the total')}
+            </button>
+          )}
+        </aside>
+        </div>
       </div>
     </section>
   )
